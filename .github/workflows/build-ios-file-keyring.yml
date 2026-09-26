@@ -1,0 +1,36 @@
+name: Build iOS file-keyring ipatool
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.0'
+          cache: true
+      - name: Install build tools
+        run: brew install ldid cmake
+      - name: Build signed iOS binary
+        run: VERSION=2.6.0-file-keyring ./tools/build-ios.sh ipatool-ios-file-keyring
+      - name: Package binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          file ipatool-ios-file-keyring
+          file ipatool-ios-file-keyring | grep -q 'Mach-O 64-bit executable arm64'
+          mkdir -p dist
+          cp ipatool-ios-file-keyring dist/ipatool-file
+          shasum -a 256 dist/ipatool-file > dist/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ipatool-ios-file-keyring
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7

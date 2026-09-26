@@ -70,12 +70,16 @@ func newKeychain(stateDirectory string, interactive bool) keychain.Keychain {
 		KeychainTrustApplication: true,
 		FileDir:                  stateDirectory,
 		FilePasswordFunc: func(s string) (string, error) {
-			if keychainPassphrase == "" && !interactive {
+			passphrase := keychainPassphrase
+			if passphrase == "" {
+				passphrase = os.Getenv("IPATOOL_KEYCHAIN_PASSPHRASE")
+			}
+			if passphrase == "" && !interactive {
 				return "", errors.New("keychain passphrase is required when not running in interactive mode; use the \"--keychain-passphrase\" flag")
 			}
 
-			if keychainPassphrase != "" {
-				return keychainPassphrase, nil
+			if passphrase != "" {
+				return passphrase, nil
 			}
 
 			path := strings.Split(s, " unlock ")[1]

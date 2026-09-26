@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	gokeychain "github.com/byteness/go-keychain"
 	"github.com/byteness/keyring"
@@ -16,11 +17,18 @@ type iosKeyring struct {
 }
 
 func openKeyring(config keyring.Config) (keychain.Keyring, error) {
+	fileMode := os.Getenv("IPATOOL_FILE_KEYRING") == "1"
+	if fileMode {
+		config.AllowedBackends = []keyring.BackendType{keyring.FileBackend}
+	}
 	ring, err := keyring.Open(config)
 	if err != nil {
 		return nil, fmt.Errorf("open iOS keyring: %w", err)
 	}
 
+	if fileMode {
+		return ring, nil
+	}
 	return &iosKeyring{Keyring: ring, service: config.ServiceName}, nil
 }
 
